@@ -1,0 +1,7 @@
+type	latitude	longitude	altitude (m)	scale	sym	name	ge_hotspot
+W	24.469717300	54.604160137	0.7	1.1	http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png	1	20,2
+W	24.469879466	54.605450059	-1.5	1.1	http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png	1	20,2
+W	24.469846220	54.604133412	0.3	1.1	http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png	1	20,2
+W	24.470017381	54.605424092	-1.5	1.1	http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png	1	20,2
+W	24.470306176	54.607606116	2.3	1.1	http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png	1	20,2
+W	24.470179211	54.607650381	2.2	1.1	http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png	1	20,2

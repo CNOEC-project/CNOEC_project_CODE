@@ -89,11 +89,7 @@ ib_min           =       -inf;                           % Minimum battery curre
 Qb_min           =       -inf;                           % Minimum battery SOC (Ah)
 min_values          =   [ib_min; Qb_min];
 
-%% Try the nonlinear constraints
-utemp = zeros(4,circuit_points);
-[ctemp ceqtemp] = vehicle_nonlinear_constraints(z0,utemp,th,circuit,min_values,max_values);
-
-%% Launch the optimization routine
+%%
 u0      =   zeros(4,circuit_points);
 options = optimoptions('fmincon', 'Display', 'iter');
-[u_opt, fval] = fmincon(@(u) vehicle_cost_function_optimal_control(z0,u,th,circuit), u0, [], [], [], [], lb, ub, @(u) vehicle_nonlinear_constraints(z0,u,th,circuit,min_values,max_values), options);
+[u_opt, fval] = fmincon(@(u) vehicle_cost_function_optimal_control(z0,u,th,circuit,min_values), u0, [], [], [], [], lb, ub, @(u) vehicle_nonlinear_constraints(z0,u,th,circuit,min_values,max_values), options);

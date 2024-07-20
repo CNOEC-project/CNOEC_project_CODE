@@ -38,7 +38,7 @@ th = [m;a;b;h;wv;Izz;Ixz;mux_f;mux_r;rb;Kr;Kf;rho_air;A_f;Cd;Voc;Rb;eta_r;eta_dc
 load("oval_for_optimization.mat");
 [rho,w_track,delta_theta,delta_s] = static_variable_computation(xin,yin,xout,yout,xmid,ymid);
 circuit = [rho'; w_track'; xin'; yin'; xout'; yout'; xmid'; ymid'; delta_s'];
-circuit_points = length(xmid);
+N_points = length(xmid);
 w_track_min = min(w_track);
 
 
@@ -65,19 +65,33 @@ n0      =       w_track(1,1)/2;  % initial transversal displacement (m)
 alpha0  =       0;          % initial heading angle (rad)
 delta0  =       0;          % initial steering angle (rad)
 z0      =       [t0;Qb0;vx0;vy0;omega0;n0;alpha0;delta0];
+n_states = length(z0);      % Number of states 
 
 %% Definition of the lower and upper bounds on the optimization variables (the input)
 % Some of these data are taken by ACAV - lecture 2
 
 omega_delta_min     =   -20*pi/180;                         % Minimum steering rate (rad/s)
-Pb_min              =   -inf;                               % Minimum battery power (W)
-Ph_min              =   -inf;                             % Maximum braking power (W)
-lb                  = [omega_delta_min, 0, Pb_min, Ph_min];
+Pg_min              =   0;                                  % Minimum PMSG power (W)
+Pb_min              =   -1e3;                               % Minimum battery power (W)
+Ph_min              =   -1e3;                             % Maximum braking power (W)
+lb                  = [omega_delta_min; Pg_min; Pb_min; Ph_min].*ones(1,N_points);
 
 omega_delta_max     =   20*pi/180;                          % Maximum steering rate (rad/s)
-Pe_max              =   370e3;                              % Maximum engine power (W)
-Pb_max              =   +inf;                               % Minimum battery power (W)
-ub                  = [omega_delta_max, Pe_max*eta_g, Pb_max, 0];
+Pe_max              =   1e3;                                % Maximum engine power (W)
+Pb_max              =   +1e3;                               % Minimum battery power (W)
+Ph_max              =   0;                                  % Maximum braking power (W)
+ub                  = [omega_delta_max; Pe_max*eta_g; Pb_max; Ph_max].*ones(1,N_points);
+
+%% Initial guess for the optimization variables
+% u0(1,:)  =   zeros(1,N_points);                              % Initial guess for the steering rate (rad/s)
+% u0(2,:)  =   70*ones(1,N_points);                           % Initial guess for the PMSG power (W)
+% u0(3,:)  =   70*ones(1,N_points);                           % Initial guess for the battery power (W)
+% u0(4,:)  =   -70*ones(1,N_points);                          % Initial guess for the braking power (W)
+% n_inputs =   size(u0,1);                                     % Number of inputs
+
+%% Change the initial guess for the optimization variables
+u0 = (ub+lb)/2;
+n_inputs =   size(u0,1);                                     % Number of inputs
 
 %% Lower and upper bounds on the states
 ib_max              =   +inf;                            % Maximum battery current (A) 
@@ -89,7 +103,6 @@ ib_min           =       -inf;                           % Minimum battery curre
 Qb_min           =       -inf;                           % Minimum battery SOC (Ah)
 min_values          =   [ib_min; Qb_min];
 
-%%
-u0      =   zeros(4,circuit_points);
-options = optimoptions('fmincon', 'Display', 'iter');
-[u_opt, fval] = fmincon(@(u) vehicle_cost_function_optimal_control(z0,u,th,circuit,min_values), u0, [], [], [], [], lb, ub, @(u) vehicle_nonlinear_constraints(z0,u,th,circuit,min_values,max_values), options);
+%% Launch the optimization routine
+options = optimoptions('fmincon', 'Display', 'iter','MaxFunctionEvaluations',1e5);
+[u_opt, fval] = fmincon(@(u) vehicle_cost_function_optimal_control(z0,u,th,circuit), u0, [], [], [], [], lb, ub, @(u) vehicle_nonlinear_constraints(z0,u,th,circuit,min_values,max_values), options);

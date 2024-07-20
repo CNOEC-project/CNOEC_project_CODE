@@ -1,4 +1,4 @@
-function [c, ceq] = vehicle_nonlinear_constraints(z0,u,th,circuit,min_values,max_values)
+function [c, ceq] = vehicle_nonlinear_constraints_MS(z0,z_vec,u_vec,th,circuit)
 %% Read parameters, states and inputs
 % Parameters
 m       =       th(1,1);     % vehicle mass (kg)
@@ -25,37 +25,53 @@ eta_t   =       th(21,1);    % mechanical transmission efficiency
 eta_g   =       th(22,1);    % PMS Generator mean efficiency
 eta_m   =       th(23,1);    % PMS Motor mean efficiency
 
+% Ridimensiona z_vec e u_vec nelle matrici originali
+N_points = length(circuit(1,:));                % Number of circuit points 
+n_states = 8;
+n_inputs = 4;
+z = reshape(z_vec, n_states, N_points);
+u = reshape(u_vec, n_inputs, N_points);
+
 % Inputs
 omega_delta      =       u(1,:);     % Steering rate (rad/s)
 Pg               =       u(2,:);     % PMSG power (W)
 Pb               =       u(3,:);     % Battery power (W)
 Ph               =       u(4,:);     % Braking power (W)
 
-% Maximum values 
-ib_max           =       max_values(1,1);       % Maximum battery current (A)
-Qb_max           =       max_values(2,1);       % Maximum battery SOC (Ah)
-
-% Minimum values
-ib_min           =       min_values(1,1);       % Minimum battery current (A)
-Qb_min           =       min_values(2,1);       % Minimum battery SOC (Ah)
+% % Maximum values 
+% ib_max           =       max_values(1,1);       % Maximum battery current (A)
+% Qb_max           =       max_values(2,1);       % Maximum battery SOC (Ah)
+% 
+% % Minimum values
+% ib_min           =       min_values(1,1);       % Minimum battery current (A)
+% Qb_min           =       min_values(2,1);       % Minimum battery SOC (Ah)
 
 %% Compute the state values
 % States
-N_points = length(circuit(1,:));
-rho     = circuit(1,:);
-w_track = circuit(2,:);
-w_track_min = min(w_track);
-delta_s = circuit(9,:);
-z       = zeros(8, N_points);
-z(:,1)  = z0;
+N_points = length(circuit(1,:));                % Number of circuit points 
+rho     = circuit(1,:);                         % Circuit curvature (1/m) 
+w_track = circuit(2,:);                         % Circuit width (m)
+w_track_min = min(w_track);                     % Circuit minimum width (m)
+delta_s = circuit(9,:);                         % Circuit discretization step (m)
+z_dyn_eq(:,1) = z0(:,1);                                    % Initialize the state vector
 
 for s=1:N_points-1
-    [z_prime, ~] = vehicle(z(:,s),u(:,s),th,rho(1,s));
-    z(:,s+1)     = z(:,s) + delta_s(s)*z_prime;              % With FFD (we will need to change this)  
+    [z_prime, ~] = vehicle(z_dyn_eq(:,s),u(:,s),th,rho(s));
+    z_dyn_eq(:,s+1)     = z_dyn_eq(:,s) + delta_s(s)*z_prime;              % With FFD (we will need to change this)  
 end
 
+% States from the dynamic equation
+t_dyn_eq        =       z_dyn_eq(1,:);     % curvilinear absissa (m)
+Qb_dyn_eq       =       z_dyn_eq(2,:);     % battery SOC [Ah]
+vx_dyn_eq       =       z_dyn_eq(3,:);     % body x velocity (m/s)
+vy_dyn_eq       =       z_dyn_eq(4,:);     % body y velocity (m/s)
+omega_dyn_eq    =       z_dyn_eq(5,:);     % yaw rate (rad/s)
+n_dyn_eq        =       z_dyn_eq(6,:);     % transversal displacement (m)
+alpha_dyn_eq    =       z_dyn_eq(7,:);     % heading angle (rad)       
+delta_dyn_eq    =       z_dyn_eq(8,:);     % steering angle (rad)
+
 % States
-t        =       z(1,:);     % curvilinear absissa (m)
+t        =       z(1,:);     % time (s)
 Qb       =       z(2,:);     % battery SOC [Ah]
 vx       =       z(3,:);     % body x velocity (m/s)
 vy       =       z(4,:);     % body y velocity (m/s)
@@ -89,17 +105,16 @@ Fxd     =       0.5*rho_air*Cd*A_f*vx.^2;                            % front aer
 %% Constraints definition
 
 % Nonlinear Inequality Constraints
-c = [% Fr.^2 + Sr.^2 - (mux_r*Nr).^2;   % Constraint 1: Fr^2 + Sr^2 - (mux_r*Nr)^2 <= 0
-     % Ff.^2 + Sf.^2 - (mux_f*Nf).^2;   % Constraint 2: Ff^2 + Sf^2 - (mux_r*Nr)^2 <= 0
-     % ib - ib_max;                     % Constraint 3: ib - ib_max <= 0       
-     % - ib + ib_min;                   % Constraint 4: -ib + ib_min <= 0
-     % Qb - Qb_max;                     % Constraint 5: Qb - Qb_max <= 0
-     % -Qb + Qb_min;                    % Constraint 6: -Qb + Qb_min <= 0
-     % Ph;                              % Constraint 9: Ph <= 0
-     n - w_track_min/2;               % Constraint 10: n - w_track/2 <= 0
-     w_track_min/2 - n];            % Constraint 11: w_track/2 - n <= 0
+c = [];
 
 
-% Absence of nonlinear Equality Constraints
-    ceq = [];
+% Nonlinear Equality Constraints
+ceq = [t - t_dyn_eq;
+       Qb - Qb_dyn_eq;
+       vx - vx_dyn_eq;
+       vy - vy_dyn_eq;
+       omega - omega_dyn_eq;
+       n - n_dyn_eq;
+       alpha - alpha_dyn_eq;
+       delta - delta_dyn_eq];
 end

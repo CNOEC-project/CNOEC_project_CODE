@@ -168,3 +168,27 @@ constraint_function = @(x) vehicle_nonlinear_constraints_MS(z0, reshape(x(1:n_st
 options = optimoptions('fmincon', 'Display', 'iter','MaxFunctionEvaluations',1e5,"Algorithm","interior-point",...
     "EnableFeasibilityMode",true,"BarrierParamUpdate","predictor-corrector",'StepTolerance',eps);
 [x_opt, fval] = fmincon(objective_function, x0, [], [], [], [], lb, ub, constraint_function, options);
+
+%% Find the equilibrium positions
+t_bar = 0.1;
+Qb_bar = 100;
+vx_bar = 1;
+vy_bar = 0.5;
+omega_bar = 0;
+n_bar = 0;
+alpha_bar = 0;
+delta_bar = 0;
+
+z_bar = [t_bar; Qb_bar; vx_bar; vy_bar; omega_bar; n_bar; alpha_bar; delta_bar];
+
+u_bar = equilibrium_position_from_states(z_bar,th,rho);
+
+%% Find the equilibrium positions from inputs
+omega_delta_bar = 0;
+Pg_bar = 0;
+Pb_bar = 10;
+Ph_bar = 0;
+
+u_bar2 = [omega_delta_bar; Pg_bar; Pb_bar; Ph_bar];
+
+definisci equilibrium_position_from_inputs

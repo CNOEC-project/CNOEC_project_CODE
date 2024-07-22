@@ -209,3 +209,16 @@ plot(s_circuit,z0(7,:));
 legend('Optimal','Initial guess');
 title('delta optimal');
 
+%% Extract the optimal racing line
+x_opt_rl = zeros(size(xmid));
+y_opt_rl = zeros(size(xmid));
+
+for ii=1:N_points
+    [x_opt_rl(ii), y_opt_rl(ii)] = extract_optimal_rl(xin(ii), yin(ii), xout(ii), yout(ii), xmid(ii), ymid(ii), n_opt(ii));    
+end
+
+figure;
+plot(xin,yin,'*','Color',[0 0 0]); hold on;
+plot(xout,yout,'*','Color',[0.5 0.5 0.5]); hold on;
+plot(xmid,ymid,'*','Color',[0 0 1]); hold on;
+plot(x_opt_rl,y_opt_rl,'Color',[0 1 0]);

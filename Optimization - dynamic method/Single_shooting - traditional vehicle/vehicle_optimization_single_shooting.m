@@ -7,7 +7,7 @@ a       = 1.421;                                          % distance between cen
 b       = 1.029;                                          % distance between center of gravity and rear axle (m)
 %Lv      = a+b;                                            % vehicle length (m)
 h       = 0.42;                                           % distance between center of gravity and road (m)
-wv      = 0.5;                                              % vehicle width (m)
+wv      = 2;                                              % vehicle width (m)
 Izz     = 1950;                                           % vehicle moment of inertia around z axis(kg*m^2)
 Ixz     = -50;                                            % vehicle xz product of inertia (kg*m^2)
 mux_f   = 1.381;                                          % front road friction coefficient
@@ -86,34 +86,67 @@ ub_z = [t_max; vx_max; vy_max; omega_max; n_max; alpha_max; delta_max].*ones(1,N
 
 n_states = size(lb_z,1);               % Number of states
 
-%% Optimization: Initial guess for the optimization variables (the input)
-% 
-% omega_delta0 = 0;                              % Initial guess for the steering rate (rad/s)
-% T_dr0 = 0;                                     % Initial guess for the rear traction torque (Nm)
-% T_df0 = 0;                                     % Initial guess for the front traction torque (Nm)
-% 
-% u0 = [omega_delta0; T_dr0; T_df0].*ones(1,N_points);
-% n_inputs =   length([omega_delta0; T_dr0; T_df0]);             % Number of inputs
-
 %% Optimization: Initial guess for the optimization variables (the states)
-% 
-% t0      =       eps;        % initial time (s)
-% vx0     =       1;          % body initial x velocity (m/s)
-% vy0     =       0;          % body initial y velocity (m/s)
-% omega0  =       0;          % initial yaw rate (rad/s)
-% n0      =       0;          % initial transversal displacement (m)
-% alpha0  =       0;          % initial heading angle (rad)
-% delta0  =       0;          % initial steering angle (rad)
-% 
-% z0      =       [t0;vx0;vy0;omega0;n0;alpha0;delta0].*ones(1,N_points);
-% 
-% n_states = length([t0;vx0;vy0;omega0;n0;alpha0;delta0]);      % Number of states 
+
+t0      =       eps;        % initial time (s)
+vx0     =       0.1;          % body initial x velocity (m/s)
+vy0     =       0;          % body initial y velocity (m/s)
+omega0  =       0;          % initial yaw rate (rad/s)
+n0      =       0;          % initial transversal displacement (m)
+alpha0  =       0;          % initial heading angle (rad)
+delta0  =       0;          % initial steering angle (rad)
+
+z0      =       [t0;vx0;vy0;omega0;n0;alpha0;delta0].*ones(1,N_points);
+
+%% Heuristic for the inizial guess on the optimization variables
+
+% Define the lower bound on the input for the heuristic search
+
+omega_delta_min_heu = -5*pi/180;            % Minimum steering rate for the heuristic search (rad/s)
+T_dr_min            =   -100;              % Minimum rear braking torque for the heuristic search (Nm)
+T_df_min            =   -100;              % Minimum front braking torque for the heuristic search (Nm)
+lb_heu = [omega_delta_min_heu; T_dr_min; T_df_min];
+
+omega_delta_max_heu = 5*pi/180;            % Minimum steering rate for the heuristic search (rad/s)
+T_dr_max            =   100;               % Minimum rear braking torque for the heuristic search (Nm)
+T_df_max            =   100;               % Minimum front braking torque for the heuristic search (Nm)
+ub_heu = [omega_delta_max_heu; T_dr_max; T_df_max];
+
+u0 = heuristic_search(z0,lb_heu,ub_heu,circuit);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 %% Optimization: Initial guess for the optimization variables (the input)
 
-u0(1,:) = linspace(0,1e-2,N_points);
-u0(2,:) = linspace(1,10,N_points);
-u0(3,:) = linspace(1,10,N_points);
+u0(1,:) = zeros(size(xin))';                    % Initial guess for the steering rate - omega_delta (rad/s)
+u0(2,:) = linspace(1,10,N_points);                      % Initial guess for the rear traction torque - Tdr (Nm)
+u0(3,:) = linspace(1,10,N_points);                      % Initial guess for the front traction torque - Tdf (Nm)
 n_inputs =   size(u0,1);             % Number of inputs
 
 % Corresponding initial guess for the states
@@ -122,6 +155,7 @@ for ii=1:N_points
     z0(:,ii) = equilibrium_position_from_inputs(u0(:,ii),th,rho);
 end
 
+z0(1,:) = 10*ones(size(xin))';
 %% Prepare and launch the optimization
 
 % Ridimensiona z0 e u0 in vettori colonna
@@ -159,45 +193,96 @@ alpha_opt = x_opt(6:n_states:n_states*N_points);              % Optimal heading 
 delta_opt = x_opt(7:n_states:n_states*N_points);              % Optimal steering angle (rad)
 
 omega_delta_opt = x_opt(n_states*N_points+1:n_inputs:end);    % Optimal steering rate (rad/s)
-optimal_T_dr    = x_opt(n_states*N_points+2:n_inputs:end);    % Optimal rear traction torque (Nm)
-optimal_T_df    = x_opt(n_states*N_points+3:n_inputs:end);    % Optimal front traction torque (Nm)
+T_dr_opt    = x_opt(n_states*N_points+2:n_inputs:end);    % Optimal rear traction torque (Nm)
+T_df_opt    = x_opt(n_states*N_points+3:n_inputs:end);    % Optimal front traction torque (Nm)
 
 Tlap_opt = sum(t_opt);                                        % Optimal lap time (s)
 
-% Plot the results
+%% Plot the results - state evolutions
+s_circuit = cumsum(delta_s);                                  % Circuit mid line curvilinear absissa (m)
+
+% Time 
 figure;
-plot(delta_s,t_opt); hold on;
-plot(delta_s,z0(1,:)); 
+plot(s_circuit,t_opt); hold on;
+plot(s_circuit,z0(1,:)); 
+legend('Optimal','Initial guess');
 title('delta T optimal');
 
+% Longitudinal velocity
 figure;
-plot(delta_s,vx_opt); hold on;
-plot(delta_s,z0(2,:));
-legend('Optimal','Initia')
+plot(s_circuit,vx_opt); hold on;
+plot(s_circuit,z0(2,:));
+legend('Optimal','Initial guess');
 title('vx optimal');
 
+% Transversal velocity
 figure;
-plot(delta_s,vy_opt); hold on;
-plot(delta_s,z0(3,:));
+plot(s_circuit,vy_opt); hold on;
+plot(s_circuit,z0(3,:));
+legend('Optimal','Initial guess');
 title('vy optimal');
 
+% Yaw rate 
 figure;
-plot(delta_s,omega_opt); hold on;
-plot(delta_s,z0(4,:));
+plot(s_circuit,omega_opt); hold on;
+plot(s_circuit,z0(4,:));
+legend('Optimal','Initial guess');
 title('omega optimal');
 
+% Transversal displacement
 figure;
-plot(delta_s,n_opt); hold on;
-plot(delta_s,z0(5,:));
+plot(s_circuit,n_opt); hold on;
+plot(s_circuit,z0(5,:));
+legend('Optimal','Initial guess');
 title('n optimal');
 
+% Heading
 figure;
-plot(delta_s,alpha_opt); hold on;
-plot(delta_s,z0(6,:)); 
+plot(s_circuit,alpha_opt); hold on;
+plot(s_circuit,z0(6,:)); 
+legend('Optimal','Initial guess');
 title('alpha optimal');
 
+% Steering angle
 figure;
-plot(delta_s,delta_opt); hold on;
-plot(delta_s,z0(7,:)); 
+plot(s_circuit,delta_opt); hold on;
+plot(s_circuit,z0(7,:));
+legend('Optimal','Initial guess');
 title('delta optimal');
 
+%% Plot the results - inputs evolution
+
+% Steering rate
+figure;
+plot(s_circuit,omega_delta_opt); hold on;
+plot(s_circuit,u0(1,:));
+legend('Optimal','Initial guess');
+title('Steering rate optimal');
+
+% Rear traction torque (Nm)
+figure;
+plot(s_circuit,T_dr_opt); hold on;
+plot(s_circuit,u0(2,:)); 
+legend('Optimal','Initial guess');
+title('Rear traction torque optimal');
+
+% Front traction torque (Nm)
+figure;
+plot(s_circuit,T_df_opt); hold on;
+plot(s_circuit,u0(3,:));
+legend('Optimal','Initial guess');
+title('Front traction torque optimal');
+
+%% Extract the optimal racing line
+x_opt_rl = zeros(size(xmid));
+y_opt_rl = zeros(size(xmid));
+
+for ii=1:N_points
+    [x_opt_rl(ii), y_opt_rl(ii)] = extract_optimal_rl(xin(ii), yin(ii), xout(ii), yout(ii), xmid(ii), ymid(ii), n_opt(ii));    
+end
+
+figure;
+plot(xin,yin,'*','Color',[0 0 0]); hold on;
+plot(xout,yout,'*','Color',[0.5 0.5 0.5]); hold on;
+plot(xmid,ymid,'*','Color',[0 0 1]); hold on;
+plot(x_opt_rl,y_opt_rl,'Color',[0 1 0]);

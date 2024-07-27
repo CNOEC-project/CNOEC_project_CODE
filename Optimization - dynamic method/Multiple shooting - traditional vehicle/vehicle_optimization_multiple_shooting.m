@@ -111,7 +111,7 @@ n_states = size(lb_z,1);               % Number of states
 
 %% Optimization: Initial guess for the optimization variables (the input)
 
-u0(1,:) = zeros(size(xin))';                    % Initial guess for the steering rate - omega_delta (rad/s)
+u0(1,:) = linspace(0,0.1,N_points);                    % Initial guess for the steering rate - omega_delta (rad/s)
 u0(2,:) = linspace(1,10,N_points);                      % Initial guess for the rear traction torque - Tdr (Nm)
 u0(3,:) = linspace(1,10,N_points);                      % Initial guess for the front traction torque - Tdf (Nm)
 n_inputs =   size(u0,1);             % Number of inputs
@@ -122,7 +122,6 @@ for ii=1:N_points
     z0(:,ii) = equilibrium_position_from_inputs(u0(:,ii),th,rho);
 end
 
-z0(1,:) = 10*ones(size(xin))';
 %% Prepare and launch the optimization
 
 % Ridimensiona z0 e u0 in vettori colonna

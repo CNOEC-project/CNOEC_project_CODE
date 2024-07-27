@@ -60,15 +60,14 @@ lambda_f=       delta-(a*omega+vy)/vx;                              % front side
 lambda_r=       delta-(b*omega-vy)/vx;                              % rear sideslip angle (rad)
 Ff      =       Kf*lambda_f*Nf;                                     % front lateral force (N) 
 Fr      =       Kr*lambda_r*Nr;                                     % front lateral force (N) 
-Fxd     =       0.5*rho_air*Cd*A_f*vx^2;                            % front aerodynamic resistance (N)
 
-F       =       [Sf;Sr;Nf;Nr;Nr;Ff;Fr;Fxd];
+F       =       [Sf;Sr;Nf;Nr;Nr;Ff;Fr];
 
 zprime=zeros(n_states,1);
 % Model equations
 t_prime      =   (1-n*rho)/(vx*cos(alpha)-vy*sin(alpha));      
 zprime(1,1)  =   (1-n*rho)/(vx*cos(alpha)-vy*sin(alpha));                         % t_prime
-zprime(2,1)  =   ((Sr+Sf*cos(delta)-Ff*sin(delta)-Fxd)/m+omega*vy)*t_prime;       % vx_prime
+zprime(2,1)  =   ((Sr+Sf*cos(delta)-Ff*sin(delta))/m+omega*vy)*t_prime;       % vx_prime
 zprime(3,1)  =   ((Fr+Sf*sin(delta)+Ff*cos(delta))/m-omega*vx)*t_prime;           % vy_prime
 zprime(4,1)  =   ((a*Ff*cos(delta)+a*Sf*sin(delta)-b*Fr)/Izz)*t_prime;              % omega_prime
 zprime(5,1)  =   (vx*cos(alpha)+vy*sin(alpha))*t_prime;                           % n_prime

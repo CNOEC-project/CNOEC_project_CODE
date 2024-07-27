@@ -2,17 +2,17 @@ clc;    clear all;      close all;
 
 %% Data from the paper [Dynamics exploration of a single-track rigid car model with load transfer - Rucco et al]
 
-m       = 1480;                                           % vehicle mass (kg)
-a       = 1.421;                                          % distance between center of gravity and front axle (m)
-b       = 1.029;                                          % distance between center of gravity and rear axle (m)
+m       = 1050;                                           % vehicle mass (kg)
+a       = 1.15;                                          % distance between center of gravity and front axle (m)
+b       = 1;                                          % distance between center of gravity and rear axle (m)
 %Lv      = a+b;                                            % vehicle length (m)
-h       = 0.42;                                           % distance between center of gravity and road (m)
+h       = 0.45;                                           % distance between center of gravity and road (m)
 wv      = 0.1;                                              % vehicle width (m)
-Izz     = 1950;                                           % vehicle moment of inertia around z axis(kg*m^2)
+Izz     = 800;                                           % vehicle moment of inertia around z axis(kg*m^2)
 Ixz     = -50;                                            % vehicle xz product of inertia (kg*m^2)
 mux_f   = 1.381;                                          % front road friction coefficient
-mux_r   = 1.355;                                          % wheel radius (m)
-rw      = 0.3;                                            % braking front ratio on the front axle 
+mux_r   = 1.355;                                          % rear road friction coefficient
+rw      = 0.3;                                            % wheel radius (m) 
 Kr      = 20;                                             % rear adimensional cornering stiffness 
 Kf      = 20;                                             % front adimensional cornering stiffness
 rho_air = 1.293;                                          % air density (kg/m^3)
@@ -30,6 +30,11 @@ circuit = [rho'; w_track'; xin'; yin'; xout'; yout'; xmid'; ymid'; delta_s'];
 N_points = length(xmid);
 w_track_min = min(w_track);
 
+figure;
+plot(xin,yin,'*'); hold on;
+plot(xout,yout,'*'); hold on;
+plot(xmid,ymid,'*'); hold off;
+legend('inner','outer','mid');
 
 % "circuit" variable has 9 rows:
 % 1st:      rho (1/m) - curvature of every point in the circuit 
@@ -67,7 +72,7 @@ ub_u                  = [omega_delta_max; T_dr_max; T_df_max].*ones(1,N_points);
 % Lower bound on the states
 t_min = 0;                              % Minimum time (s)
 vx_min = -200/3.6;                      % Minimum body x velocity (m/s)
-vy_min = -inf;                      % Minimum body y velocity (m/s)
+vy_min = -200/3.6;                      % Minimum body y velocity (m/s)
 omega_min = -inf;                       % Minimum yaw rate (rad/s)
 n_min = -inf;                 % Minimum transversal displacement (m)
 alpha_min = -inf;                      % Minimum heading angle (rad)                
@@ -76,8 +81,8 @@ lb_z = [t_min; vx_min; vy_min; omega_min; n_min; alpha_min; delta_min].*ones(1,N
 
 % Upper bound on the states
 t_max = inf;                           % Maximum time (s)
-vx_max = inf;                      % Maximum body x velocity (m/s)
-vy_max = inf;                      % Maximum body y velocity (m/s)
+vx_max = 200/3.6;                      % Maximum body x velocity (m/s)
+vy_max = 200/3.6;                      % Maximum body y velocity (m/s)
 omega_max = inf;                       % Maximum yaw rate (rad/s)
 n_max = inf;                 % Maximum transversal displacement (m)
 alpha_max = inf;                      % Maximum heading angle (rad)                
@@ -90,7 +95,7 @@ n_states = size(lb_z,1);               % Number of states
 
 t0      =       eps;        % initial time (s)
 vx0     =       eps;        % body initial x velocity (m/s)
-vy0     =       0;          % body initial y velocity (m/s)
+vy0     =       0.5;          % body initial y velocity (m/s)
 omega0  =       0;          % initial yaw rate (rad/s)
 n0      =       0;          % initial transversal displacement (m)
 alpha0  =       0;          % initial heading angle (rad)
@@ -102,17 +107,17 @@ z0      =       [t0;vx0;vy0;omega0;n0;alpha0;delta0].*ones(1,N_points);
 
 % Define the lower bound on the input for the heuristic search
 
-omega_delta_min_heu = -10*pi/180;            % Minimum steering rate for the heuristic search (rad/s)
+omega_delta_min_heu = -20*pi/180;            % Minimum steering rate for the heuristic search (rad/s)
 T_dr_min_heu            =   -100;              % Minimum rear braking torque for the heuristic search (Nm)
 T_df_min_heu            =   -100;              % Minimum front braking torque for the heuristic search (Nm)
 lb_heu = [omega_delta_min_heu; T_dr_min_heu; T_df_min_heu];
 
-omega_delta_max_heu = 10*pi/180;            % Minimum steering rate for the heuristic search (rad/s)
-T_dr_max_heu            =   10000;               % Minimum rear braking torque for the heuristic search (Nm)
-T_df_max_heu            =   10000;               % Minimum front braking torque for the heuristic search (Nm)
+omega_delta_max_heu = 20*pi/180;            % Minimum steering rate for the heuristic search (rad/s)
+T_dr_max_heu            =   100;               % Minimum rear braking torque for the heuristic search (Nm)
+T_df_max_heu            =   100;               % Minimum front braking torque for the heuristic search (Nm)
 ub_heu = [omega_delta_max_heu; T_dr_max_heu; T_df_max_heu];
 
-[u0_heu,z0_heu,flag] = heuristic_search(z0,lb_heu,ub_heu,lb_z,ub_z,th,circuit);
+[u0_heu,z0_heu,flag,tt,ss,ii,jj,kk] = heuristic_search(z0,lb_heu,ub_heu,lb_z,ub_z,th,circuit);
 flag
 
 return

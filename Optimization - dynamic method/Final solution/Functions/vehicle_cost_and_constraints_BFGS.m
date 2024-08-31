@@ -43,10 +43,14 @@ function v = vehicle_cost_and_constraints_BFGS(z_full,u_vec,N,chassis,tyre,s_col
     dXkj = zeros(n_states,OPT_d);                                           % Initialize the vector of state derivatives at collocation points
 
     g = [T_drive_vec.*T_brake_vec];                                              % Nonlinear equality constraint matrix
-
+    % g = [];
+    
+    mu0_x   =       tyre.mu0_x; % Maximum longitudinal friction coefficient with static load (-)
+    pD2     =       tyre.pD2;    % Pacejka's magic formula tyre load sensitivity coefficient (-)
+    Fz0     =       tyre.Fz0;    % Pacejka's magic formula nominal vertical load (N)
     % Nonlinear inequality constraint matrix
-    h = [(mu_f.^2-(Fx_f.^2+Fy_f.^2)./Fz_f.^2)';                                % Friction ellipse - front wheel
-        (mu_r.^2-(Fx_r.^2+Fy_r.^2)./Fz_r.^2)'];                                % Friction ellipse - rear wheel 
+    h = [(mu_f.^2-(Fx_f.^2+Fy_f.^2)./Fz_f.^2)'/norm(mu0_x + pD2*(Fz_f-Fz0)/Fz0);                                % Friction ellipse - front wheel
+        (mu_r.^2-(Fx_r.^2+Fy_r.^2)./Fz_r.^2)'/norm(mu0_x + pD2*(Fz_r-Fz0)/Fz0)];                                % Friction ellipse - rear wheel 
 
     for kk = 0:N-1
         

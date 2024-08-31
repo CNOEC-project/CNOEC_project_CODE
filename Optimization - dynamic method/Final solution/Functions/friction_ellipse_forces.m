@@ -88,7 +88,7 @@ Dx_f = mu_f.*Fz_f;                                               % Pacejka's var
 Dx_r = mu_r.*Fz_r;                                               % Pacejka's variable friction-dependent force term - rear wheel (N)
 
 vx_f     = sqrt((vy+lf*omega_z).^2 + vx.^2).*cos(lambda_f);        % Front wheel longitudinal speed (m/s)
-vx_r     = sqrt((vy-lf*omega_z).^2 + vx.^2).*cos(lambda_r);        % Rear wheel longitudinal speed (m/s)
+vx_r     = sqrt((vy-lr*omega_z).^2 + vx.^2).*cos(lambda_r);        % Rear wheel longitudinal speed (m/s)
 
 sx_f = (rw*omega_f - vx_f)./vx_f;                                % Front longitudinal slip ratio (-)
 sx_r = (rw*omega_r - vx_r)./vx_r;                                % Rear longitudinal slip ratio (-)

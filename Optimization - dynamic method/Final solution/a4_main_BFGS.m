@@ -81,7 +81,7 @@ ub_z(4,N+1) = 0.5/z_norm_factor(4);             % Ask that at the end point the 
 
 %% Optimization: Initial guess for the states
 
-vx0         =       25;            % Initial guess - body x velocity (m/s)
+vx0         =       25;             % Initial guess - body x velocity (m/s)
 vy0         =       0;             % Initial guess - body y velocity (m/s)
 omega_z0    =       0;             % Initial guess - yaw rate (rad/s)
 n0          =       0;             % Initial guess - transversal displacement (m)
@@ -92,11 +92,12 @@ omega_r0    =       vx0/tyre.rw;   % Intiail guess - rear wheel rotational speed
 % Normalize the initial guess for the states
 z0_normalized = [vx0;vy0;omega_z0;n0;epsi0;omega_f0;omega_r0]./z_norm_factor;
 z0      =       z0_normalized.*ones(1,N+1);
+% z0(:,1) = zeros(n_states,1); z0(1,1) = 0.25;
 
 %% Optimization: Initial guess for the inputs
 
 T_drive0         =  1000;           % Initial guess - driving torque (Nm)
-T_brake0         =  0;              % Initial guess - braking torque (Nm)
+T_brake0         =  -1e2;              % Initial guess - braking torque (Nm)
 delta_0          =  1e-3;           % Initial guess - steering angle (rad)
 
 % Normalize the initial guess for the inputs
@@ -135,12 +136,12 @@ nu_grid_points = length(u0_vec);        % Store the total number of inputs in th
 nz_col_points  = length(xc0_vec);       % Store the total number of states in the collocation points 
 
 %% Set the linear equality matrices
-% Impose null states at starting point (i.e., z(s=1)==0)
+% % Impose null states at starting point (i.e., z(s=1)==0)
 Aeq = zeros(n_states,length(x0));
 Aeq(:,1:n_states) = eye(n_states);
 beq = zeros(n_states,1);
-beq(1) = 1e-2;    % To help the solver, ask a not exactly null initial velocity, to avoid tprime = inf 
-            
+beq(1) = 1e-3;    % To help the solver, ask a not exactly null initial velocity, to avoid tprime = inf 
+
 %% Set the linear inequality matrices (based on lb and ub)
 C_ineq = [eye(length(x0)); -eye(length(x0))];
 d_ineq = [lb; -ub];
@@ -149,6 +150,7 @@ d_ineq = [lb; -ub];
 
 % Set the number of nonlinear constraints
 p = (N+1) + OPT_d*n_states*N + n_states*N;              % Number of equality constraints
+% p = OPT_d*n_states*N + n_states*N;              % Number of equality constraints
 q = (N+1)*2;                                            % Number of inequality constraints - friction ellipse at grid points
 
 % Initialize solver options
@@ -156,7 +158,7 @@ myoptions               =   myoptimset;
 myoptions.Hessmethod  	=	'BFGS';
 myoptions.gradmethod  	=	'CD';
 myoptions.graddx        =	2^-17;
-myoptions.tolconstr     =   10;
+myoptions.tolconstr     =   5;
 myoptions.ls_nitermax   =	5e2;
 myoptions.nitermax      =	1e3;
 myoptions.GN_funF       =   @(x) objective_function_GN([x(1:nz_grid_points); x(nz_grid_points+nu_grid_points+1:end)],x(length(z0_vec)+1:length(z0_vec)+length(u0_vec)),N,chassis,tyre,s_col,z_norm_factor,u_norm_factor,k_col,B_col,nz_grid_points,OPT_d);
@@ -215,7 +217,6 @@ track_new.y = interp1(track.s, track.y, track_new.s);                           
 
 [track_new.xopt,track_new.yopt] = cartPath(track_new.x,track_new.y, z_full(4,:));        % Reconstruct the optimal racing line
 [track_new.Xl,track_new.Xr] = trackLimits(track_new.x,track_new.y, z_norm_factor(4)*2);  % Reconstruct the track limits
-
 
 %% Plot the results
 
@@ -321,6 +322,15 @@ title('Steering angle','FontSize',16);
 grid on;
 set(gca, 'FontSize', 16);
 
+figure;
+plot(s_full,T_brake_opt_full,'b','LineWidth',2); hold on;
+plot(s_full,T_drive_opt_full,'r','LineWidth',2);
+legend('$T_{brake,opt}$','$T_{drive,opt}$','interpreter','latex','FontSize',16);
+xlabel('$s [m]$','Interpreter','LaTex','FontSize',16);
+ylabel('$T \, [Nm]$','Interpreter','LaTex','FontSize',16);
+title('Braking torque vs Driving Torque','FontSize',16);
+grid on;
+set(gca, 'FontSize', 16);
 %% Plot optimal racing line with the corresponding state values (point-by-point)
 % Here you can click on the figure to see the state values at the desired
 % point

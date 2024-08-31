@@ -64,11 +64,11 @@ F_drag = 0.5*rho_air*Cd*A_f*vx^2;       % Drag aerodynamic force (Nm)
 F_lift = 0.5*rho_air*Cl*A_f*vx^2;       % Lift aerodynamic force - positive if pointing downwards (Nm)
 
 %% Front and rear rolling resistances
-% F_roll_f = f_rol*m*g*lr/lv;             % Rolling resistance on the front wheel (Nm)
-% F_roll_r = f_rol*m*g*lf/lv;             % Rolling resistance on the rear wheel (Nm)
+F_roll_f = f_rol*m*g*lr/lv;             % Rolling resistance on the front wheel (Nm)
+F_roll_r = f_rol*m*g*lf/lv;             % Rolling resistance on the rear wheel (Nm)
 
-F_roll_f = 0;             % Rolling resistance on the front wheel (Nm)
-F_roll_r = 0;             % Rolling resistance on the rear wheel (Nm)
+% F_roll_f = 0;             % Rolling resistance on the front wheel (Nm)
+% F_roll_r = 0;             % Rolling resistance on the rear wheel (Nm)
 
 %% Front and rear vertical loads (neglect load transfer)
 Fz_f = m*g*lr/lv + F_lift/2;                                % Front vertical load (N)

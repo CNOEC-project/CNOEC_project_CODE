@@ -96,7 +96,7 @@ z0      =       z0_normalized.*ones(1,N+1);
 
 %% Optimization: Initial guess for the inputs
 
-T_drive0         =  1000;           % Initial guess - driving torque (Nm)
+T_drive0         =  2000;           % Initial guess - driving torque (Nm)
 T_brake0         =  -1e2;              % Initial guess - braking torque (Nm)
 delta_0          =  1e-3;           % Initial guess - steering angle (rad)
 
@@ -140,7 +140,7 @@ nz_col_points  = length(xc0_vec);       % Store the total number of states in th
 Aeq = zeros(n_states,length(x0));
 Aeq(:,1:n_states) = eye(n_states);
 beq = zeros(n_states,1);
-beq(1) = 1e-3;    % To help the solver, ask a not exactly null initial velocity, to avoid tprime = inf 
+beq(1) = 1e-2;    % To help the solver, ask a not exactly null initial velocity, to avoid tprime = inf 
 
 %% Set the linear inequality matrices (based on lb and ub)
 C_ineq = [eye(length(x0)); -eye(length(x0))];
@@ -158,7 +158,7 @@ myoptions               =   myoptimset;
 myoptions.Hessmethod  	=	'BFGS';
 myoptions.gradmethod  	=	'CD';
 myoptions.graddx        =	2^-17;
-myoptions.tolconstr     =   5;
+myoptions.tolconstr     =   10;
 myoptions.ls_nitermax   =	5e2;
 myoptions.nitermax      =	1e3;
 myoptions.GN_funF       =   @(x) objective_function_GN([x(1:nz_grid_points); x(nz_grid_points+nu_grid_points+1:end)],x(length(z0_vec)+1:length(z0_vec)+length(u0_vec)),N,chassis,tyre,s_col,z_norm_factor,u_norm_factor,k_col,B_col,nz_grid_points,OPT_d);
@@ -222,9 +222,11 @@ track_new.y = interp1(track.s, track.y, track_new.s);                           
 
 % States
 figure;
-plot(s_full,vx_full_opt*3.6,'b','LineWidth',2); hold on;
-plot(s_grid,z0(1,:)*z_norm_factor(1)*3.6,'r','LineWidth',2);
-legend('$v_{x,opt}$','$v_{x,init}$','interpreter','latex','FontSize',16);
+plot(s_full,vx_full_opt*3.6,'LineWidth',2,'Color',[0 0 1]); hold on;
+plot(s_full,vx_max*3.6*ones(size(s_full)),'LineWidth',2,'Color',[1 0 0],'LineStyle','--'); hold on;
+plot(s_full,vx_min*3.6*ones(size(s_full)),'LineWidth',2,'Color',[1 0 0],'LineStyle',':'); hold on;
+plot(s_grid,z0(1,:)*z_norm_factor(1)*3.6,'LineWidth',2,'Color',[0 1 0]);
+legend('$v_{x,opt}$','$v_{x,max}$','$v_{x,min}$','$v_{x,init}$','interpreter','latex','FontSize',16);
 title('Longitudinal speed','FontSize',16);
 xlabel('$s [m]$','Interpreter','LaTex','FontSize',16);
 ylabel('$v_{x} \, [\frac{km}{h}]$','Interpreter','LaTex','FontSize',16);
@@ -232,9 +234,11 @@ grid on;
 set(gca, 'FontSize', 16);
 
 figure;
-plot(s_full,vy_full_opt*3.6,'b','LineWidth',2); hold on;
-plot(s_grid,z0(2,:)*z_norm_factor(2)*3.6,'r','LineWidth',2);
-legend('$v_{y,opt}$','$v_{y,init}$','interpreter','latex','FontSize',16);
+plot(s_full,vy_full_opt*3.6,'LineWidth',2,'Color',[0 0 1]); hold on;
+plot(s_full,vy_max*3.6*ones(size(s_full)),'LineWidth',2,'Color',[1 0 0],'LineStyle','--'); hold on;
+plot(s_full,vy_min*3.6*ones(size(s_full)),'LineWidth',2,'Color',[1 0 0],'LineStyle',':'); hold on;
+plot(s_grid,z0(2,:)*z_norm_factor(2)*3.6,'LineWidth',2,'Color',[0 1 0]);
+legend('$v_{y,opt}$','$v_{y,max}$','$v_{y,min}$','$v_{y,init}$','interpreter','latex','FontSize',16);
 xlabel('$s [m]$','Interpreter','LaTex','FontSize',16);
 ylabel('$v_{y} \, [\frac{km}{h}]$','Interpreter','LaTex','FontSize',16);
 title('Lateral speed','FontSize',16);
@@ -242,9 +246,11 @@ grid on;
 set(gca, 'FontSize', 16);
 
 figure;
-plot(s_full,omega_full_opt,'b','LineWidth',2); hold on;
-plot(s_grid,z0(3,:)*z_norm_factor(3),'r','LineWidth',2);
-legend('$\Omega_{z,opt}$','$\Omega_{z,init}$','interpreter','latex','FontSize',16);
+plot(s_full,omega_full_opt,'LineWidth',2,'Color',[0 0 1]); hold on;
+plot(s_full,omega_z_max*ones(size(s_full)),'LineWidth',2,'Color',[1 0 0],'LineStyle','--'); hold on;
+plot(s_full,omega_z_min*ones(size(s_full)),'LineWidth',2,'Color',[1 0 0],'LineStyle',':'); hold on;
+plot(s_grid,z0(3,:)*z_norm_factor(3),'LineWidth',2,'Color',[0 1 0]);
+legend('$\Omega_{z,opt}$','$\Omega_{z,max}$','$\Omega_{z,min}$','$\Omega_{z,init}$','interpreter','latex','FontSize',16);
 xlabel('$s [m]$','Interpreter','LaTex','FontSize',16);
 ylabel('$\Omega_{z} \, [\frac{rad}{s}]$','Interpreter','LaTex','FontSize',16);
 title('Yaw rate','FontSize',16);
@@ -252,9 +258,11 @@ grid on;
 set(gca, 'FontSize', 16);
 
 figure;
-plot(s_full,n_full_opt,'b','LineWidth',2); hold on;
-plot(s_grid,z0(4,:)*z_norm_factor(4),'r','LineWidth',2);
-legend('$n_{opt}$','$n_{init}$','interpreter','latex','FontSize',16);
+plot(s_full,n_full_opt,'LineWidth',2,'Color',[0 0 1]); hold on;
+plot(s_full,n_max*ones(size(s_full)),'LineWidth',2,'Color',[1 0 0],'LineStyle','--'); hold on;
+plot(s_full,n_min*ones(size(s_full)),'LineWidth',2,'Color',[1 0 0],'LineStyle',':'); hold on;
+plot(s_grid,z0(4,:)*z_norm_factor(4),'LineWidth',2,'Color',[0 1 0]);
+legend('$n_{opt}$','$n_{max}$','$n_{min}$','$n_{init}$','interpreter','latex','FontSize',16);
 xlabel('$s [m]$','Interpreter','LaTex','FontSize',16);
 ylabel('$n [m]$','Interpreter','LaTex','FontSize',16);
 title('Transversal displacement','FontSize',16);
@@ -262,9 +270,11 @@ grid on;
 set(gca, 'FontSize', 16);
 
 figure;
-plot(s_full,rad2deg(epsi_full_opt),'b','LineWidth',2); hold on;
-plot(s_grid,rad2deg(z0(5,:)*z_norm_factor(5)),'r','LineWidth',2);
-legend('$\epsilon_{opt}$','$\epsilon_{init}$','interpreter','latex','FontSize',16);
+plot(s_full,rad2deg(epsi_full_opt),'LineWidth',2,'Color',[0 0 1]); hold on;
+plot(s_full,rad2deg(epsi_max)*ones(size(s_full)),'LineWidth',2,'Color',[1 0 0],'LineStyle','--'); hold on;
+plot(s_full,rad2deg(epsi_max)*ones(size(s_full)),'LineWidth',2,'Color',[1 0 0],'LineStyle',':'); hold on;
+plot(s_grid,rad2deg(z0(5,:)*z_norm_factor(5)),'LineWidth',2,'Color',[0 1 0]);
+legend('$\epsilon_{opt}$','$\epsilon_{max}$','$\epsilon_{min}$','$\epsilon_{init}$','interpreter','latex','FontSize',16);
 xlabel('$s [m]$','Interpreter','LaTex','FontSize',16);
 ylabel('$\epsilon \, [deg]$','Interpreter','LaTex','FontSize',16);
 title('Heading angle','FontSize',16);
@@ -272,9 +282,11 @@ grid on;
 set(gca, 'FontSize', 16);
 
 figure;
-plot(s_full,omega_f_full_opt*60/(2*pi),'b','LineWidth',2); hold on;
-plot(s_grid,z0(6,:)*z_norm_factor(6)*60/(2*pi),'r','LineWidth',2);
-legend('$\Omega_{f,opt}$','$\Omega_{f,init}$','interpreter','latex','FontSize',16);
+plot(s_full,omega_f_full_opt*60/(2*pi),'LineWidth',2,'Color',[0 0 1]); hold on;
+plot(s_full,omega_f_max*60/(2*pi)*ones(size(s_full)),'LineWidth',2,'Color',[1 0 0],'LineStyle','--'); hold on;
+plot(s_full,omega_f_min*60/(2*pi)*ones(size(s_full)),'LineWidth',2,'Color',[1 0 0],'LineStyle',':'); hold on;
+plot(s_grid,z0(6,:)*z_norm_factor(6)*60/(2*pi),'LineWidth',2,'Color',[0 1 0]);
+legend('$\Omega_{f,opt}$','$\Omega_{f,max}$','$\Omega_{f,min}$','$\Omega_{f,init}$','interpreter','latex','FontSize',16);
 xlabel('$s [m]$','Interpreter','LaTex','FontSize',16);
 ylabel('$\Omega_{f} \, [rpm]$','Interpreter','LaTex','FontSize',16);
 title('Front wheel rotational speed','FontSize',16);
@@ -282,9 +294,11 @@ grid on;
 set(gca, 'FontSize', 16);
 
 figure;
-plot(s_full,omega_r_full_opt*60/(2*pi),'b','LineWidth',2); hold on;
-plot(s_grid,z0(7,:)*z_norm_factor(7)*60/(2*pi),'r','LineWidth',2);
-legend('$\Omega_{r,opt}$','$\Omega_{r,init}$','interpreter','latex','FontSize',16);
+plot(s_full,omega_r_full_opt*60/(2*pi),'LineWidth',2,'Color',[0 0 1]); hold on;
+plot(s_full,omega_r_max*60/(2*pi)*ones(size(s_full)),'LineWidth',2,'Color',[1 0 0],'LineStyle','--'); hold on;
+plot(s_full,omega_r_min*60/(2*pi)*ones(size(s_full)),'LineWidth',2,'Color',[1 0 0],'LineStyle',':'); hold on;
+plot(s_grid,z0(7,:)*z_norm_factor(7)*60/(2*pi),'LineWidth',2,'Color',[0 1 0]);
+legend('$\Omega_{r,opt}$','$\Omega_{r,max}$','$\Omega_{r,min}$','$\Omega_{r,init}$','interpreter','latex','FontSize',16);
 xlabel('$s [m]$','Interpreter','LaTex','FontSize',16);
 ylabel('$\Omega_{r} \, [rpm]$','Interpreter','LaTex','FontSize',16);
 title('Rear wheel rotational speed','FontSize',16);
@@ -293,9 +307,11 @@ set(gca, 'FontSize', 16);
 
 % Inputs
 figure;
-plot(s_full,T_drive_opt_full,'b','LineWidth',2); hold on;
-plot(s_grid,u0(1,:)*u_norm_factor(1),'r','LineWidth',2);
-legend('$T_{drive,opt}$','$T_{drive,init}$','interpreter','latex','FontSize',16);
+plot(s_full,T_drive_opt_full,'LineWidth',2,'Color',[0 0 1]); hold on;
+plot(s_full,T_drive_max*ones(size(s_full)),'LineWidth',2,'Color',[1 0 0],'LineStyle','--'); hold on;
+plot(s_full,T_drive_min*ones(size(s_full)),'LineWidth',2,'Color',[1 0 0],'LineStyle',':'); hold on;
+plot(s_grid,u0(1,:)*u_norm_factor(1),'LineWidth',2,'Color',[0 1 0]);
+legend('$T_{drive,opt}$','$T_{drive,max}$','$T_{drive,min}$','$T_{drive,init}$','interpreter','latex','FontSize',16);
 xlabel('$s [m]$','Interpreter','LaTex','FontSize',16);
 ylabel('$T_{drive} \, [Nm]$','Interpreter','LaTex','FontSize',16);
 title('Driving torque','FontSize',16);
@@ -303,9 +319,11 @@ grid on;
 set(gca, 'FontSize', 16);
 
 figure;
-plot(s_full,T_brake_opt_full,'b','LineWidth',2); hold on;
-plot(s_grid,u0(2,:)*u_norm_factor(2),'r','LineWidth',2);
-legend('$T_{brake,opt}$','$T_{brake,init}$','interpreter','latex','FontSize',16);
+plot(s_full,T_brake_opt_full,'LineWidth',2,'Color',[0 0 1]); hold on;
+plot(s_full,T_brake_max*ones(size(s_full)),'LineWidth',2,'Color',[1 0 0],'LineStyle','--'); hold on;
+plot(s_full,T_brake_min*ones(size(s_full)),'LineWidth',2,'Color',[1 0 0],'LineStyle',':'); hold on;
+plot(s_grid,u0(2,:)*u_norm_factor(2),'LineWidth',2,'Color',[0 1 0]);
+legend('$T_{brake,opt}$','$T_{brake,max}$','$T_{brake,min}$','$T_{brake,init}$','interpreter','latex','FontSize',16);
 xlabel('$s [m]$','Interpreter','LaTex','FontSize',16);
 ylabel('$T_{brake} \, [Nm]$','Interpreter','LaTex','FontSize',16);
 title('Braking torque','FontSize',16);
@@ -313,9 +331,11 @@ grid on;
 set(gca, 'FontSize', 16);
 
 figure;
-plot(s_full,rad2deg(delta_opt_full),'b','LineWidth',2); hold on;
-plot(s_grid,rad2deg(u0(3,:)*u_norm_factor(3)),'r','LineWidth',2);
-legend('$\delta_{opt}$','$\delta_{init}$','interpreter','latex','FontSize',16);
+plot(s_full,rad2deg(delta_opt_full),'LineWidth',2,'Color',[0 0 1]); hold on;
+plot(s_full,rad2deg(delta_max)*ones(size(s_full)),'LineWidth',2,'Color',[1 0 0],'LineStyle','--'); hold on;
+plot(s_full,rad2deg(delta_min)*ones(size(s_full)),'LineWidth',2,'Color',[1 0 0],'LineStyle',':'); hold on;
+plot(s_grid,rad2deg(u0(3,:)*u_norm_factor(3)),'LineWidth',2,'Color',[0 1 0]);
+legend('$\delta_{opt}$','$\delta_{max}$','$\delta_{min}$','$\delta_{init}$','interpreter','latex','FontSize',16);
 xlabel('$s [m]$','Interpreter','LaTex','FontSize',16);
 ylabel('$\delta \, [deg]$','Interpreter','LaTex','FontSize',16)
 title('Steering angle','FontSize',16);
@@ -356,9 +376,60 @@ setappdata(hFig, 'hText', []);
 % Set the callback function for mouse click event
 set(hFig, 'WindowButtonDownFcn', @mouseClickCallback);
 
+
+%%
+Fz_f = zeros(size(s_full));
+Fz_r= zeros(size(s_full));
+Fx_f= zeros(size(s_full));
+Fx_r= zeros(size(s_full));
+Fy_f= zeros(size(s_full));
+Fy_r= zeros(size(s_full));
+mu_f= zeros(size(s_full));
+mu_r= zeros(size(s_full));
+c1 = zeros(size(s_full));
+c2 = zeros(size(s_full));
+
+for ii=1:length(s_full)
+    [Fz_f(ii),Fz_r(ii),Fx_f(ii),Fx_r(ii),Fy_f(ii),Fy_r(ii),mu_f(ii),mu_r(ii)] = friction_ellipse_forces(z_full(:,ii),u_full(:,ii),chassis,tyre);
+    c1(ii) = mu_f(ii)^2-(Fx_f(ii)^2+Fy_f(ii)^2)./Fz_f(ii)^2;
+    c2(ii) = mu_r(ii)^2-(Fx_r(ii)^2+Fy_r(ii)^2)./Fz_r(ii)^2;
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 return
 %% Save the solution
-save('Solutions\solution_BFGS');
+save('Solutions\solution_BFGS4');
 
 %% Create and save a video with the final solution
 
@@ -381,11 +452,11 @@ for ii=1:length(s_full)
 
     % Display the values of the selected variables at the selected point
     textString = sprintf(['$v_{x}$ = %.2f $\\frac{km}{h}$ \n $v_{y}$ = %.2f $\\frac{km}{h}$ \n $\\Omega_{z}$ = %.2f $\\frac{rad}{s}$ \n $n$ = %.2f $m$ \n $\\epsilon$ = %.2f $^{\\circ}$ \n' ...
-                          '$\\omega_{f}$ = %.2f $rpm$ \n $\\omega_{r}$ = %.2f $rpm$ \n $T_{drive}$ = %.2f $Nm$ \n $T_{brake}$ = %.2f $Nm$ \n' ...
-                          '$\\delta$ = %.2f $^{\\circ}$'], ...
+                          '$\\Omega_{f}$ = %.2f $rpm$ \n $\\Omega_{r}$ = %.2f $rpm$ \n $T_{drive}$ = %.2f $Nm$ \n $T_{brake}$ = %.2f $Nm$ \n' ...
+                          '$\\delta$ = %.2f $^{\\circ}$ \n $s$ = %.2f $m$'], ...
                           vx_full_opt(ii)*3.6, vy_full_opt(ii)*3.6, omega_full_opt(ii), n_full_opt(ii), ...
                           rad2deg(epsi_full_opt(ii)), omega_f_full_opt(ii)*60/(2*pi), omega_r_full_opt(ii)*60/(2*pi), ...
-                          T_drive_opt_full(ii), T_brake_opt_full(ii), rad2deg(delta_opt_full(ii)));
+                          T_drive_opt_full(ii), T_brake_opt_full(ii), rad2deg(delta_opt_full(ii)), s_full(k));
    
     hText = text(track_new.xopt(ii)+10,  track_new.yopt(ii)+10, textString, 'FontSize', 12, 'BackgroundColor', 'white', 'Interpreter', 'latex');
     pause(0.01);

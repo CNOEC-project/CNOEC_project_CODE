@@ -5,8 +5,10 @@ addpath("Functions\");
 %% Load the constant parameters
 run("Parameters initializations\vehicle_parameters");           % Load the vehicle parameters
 run("Parameters initializations\tyre_parameters");              % Load the tyre parameters
-track = load("Circuits\YasMarina.mat");                         % The track centerline is sampled every 1 meter
+track = load("Circuits\simple_curve.mat");                      % The track centerline is sampled every 2 meters
+% track = load("Circuits\YasMarina.mat");                         % The track centerline is sampled every 1 meter
 run("Parameters initializations\collocation_parameters.m");     % Initialize the collocation parameters
+
 
 % Plot the circuit centerline
 figure;
@@ -154,7 +156,7 @@ myoptions.tolconstr     =   1;
 myoptions.ls_nitermax   =	5e2;
 myoptions.nitermax      =	1e3;
 myoptions.tolfun    	=	1e-6;      
-myoptions.ls_c          =	0.99;                                  
+myoptions.ls_c          =	0.99;
 
 % Run the solver
 tic;
@@ -262,7 +264,7 @@ set(gca, 'FontSize', 16);
 figure;
 plot(s_full,rad2deg(epsi_full_opt),'LineWidth',2,'Color',[0 0 1]); hold on;
 plot(s_full,rad2deg(epsi_max)*ones(size(s_full)),'LineWidth',2,'Color',[1 0 0],'LineStyle','--'); hold on;
-plot(s_full,rad2deg(epsi_max)*ones(size(s_full)),'LineWidth',2,'Color',[1 0 0],'LineStyle',':'); hold on;
+plot(s_full,rad2deg(epsi_min)*ones(size(s_full)),'LineWidth',2,'Color',[1 0 0],'LineStyle',':'); hold on;
 plot(s_grid,rad2deg(z0(5,:)*z_norm_factor(5)),'LineWidth',2,'Color',[0 1 0]);
 legend('$\epsilon_{opt}$','$\epsilon_{max}$','$\epsilon_{min}$','$\epsilon_{init}$','interpreter','latex','FontSize',16);
 xlabel('$s [m]$','Interpreter','LaTex','FontSize',16);
@@ -360,7 +362,7 @@ setappdata(hFig, 'hText', []);
 set(hFig, 'WindowButtonDownFcn', @mouseClickCallback);
 
 %% Save the solution
-% save('Solutions\solution_BFGS');
+% save('Solutions\solution_');
 
 %% Create and save a video with the final solution
 numFrames = length(s_full);                                      
@@ -403,9 +405,9 @@ video_duration = total_lap_time_opt;
 frameRate = round(numFrames/video_duration);
 movie(hFigVisible, frames_vec, 1, frameRate);
 
-return
+% return
 rmpath("Functions\");
-outputVideo = VideoWriter('BFGS_optimal_lap_dsk70', 'MPEG-4'); 
+outputVideo = VideoWriter('simplecurve_dsk_col_30', 'MPEG-4'); 
 outputVideo.FrameRate = frameRate; 
 open(outputVideo);
 for ii = 1:length(frames_vec)

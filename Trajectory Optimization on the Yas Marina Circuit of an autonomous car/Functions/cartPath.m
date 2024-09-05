@@ -1,0 +1,23 @@
+function [x,y] = cartPath(x0,y0,n)
+%CARTPATH - Retrieves cartesian coordinates of the vehicle trajectory from the centre line
+% coordinates (x0,y0) and the normal distance to the centre line (n)
+%
+% Inputs: 
+%           x0            (x-cartesian coordinates of the centerline) 
+%           y0            (y-cartesian coordinates of the centerline) 
+%           n             (normal distance to the centerline)
+% 
+% Outputs: 
+%           x             (x-cartesian coordinates of the optimal racing line) 
+%           y0            (y-cartesian coordinates of the optimal racing line) 
+
+X0 = [x0(:) y0(:)];
+dx = diff(X0);
+
+n_vec = [-dx(:,2) dx(:,1)]./vecnorm(dx')';
+X = X0 + n(:).*[n_vec; n_vec(end,:)];
+
+x = X(:,1);
+y = X(:,2);
+
+end

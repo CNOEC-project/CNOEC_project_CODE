@@ -1,7 +1,13 @@
 % Define the collocation method parameters
-
-dsk = 70;                        % Collocation step (m)
-d_th = 3;                        % Degree of interpolating polynomials
+if strcmp('YasMarina',track.track_name)
+    dsk_col = 70;                        % Collocation step (m)
+    d_th = 3;                        % Degree of interpolating polynomials
+elseif strcmp('simple_curve',track.track_name)
+    dsk_col = 30;                        % Collocation step (m)
+    d_th = 3;                        % Degree of interpolating polynomials
+else
+     error('Load a valid circuit');
+end
 
 % Collocation constants 
 tau_col = [0.1127,    0.5,    0.8873];
@@ -21,7 +27,7 @@ B_col = [0.277778; 0.444444; 0.277778];
 % Create a discrete set of points for collocation
 
 % Number of grid intervals (the number of points, Xk, is N+1)
-N = round(track.s(end)/dsk); 
+N = round(track.s(end)/dsk_col); 
 
 % Value of the independent variable at the discretisation points
 s_grid = linspace(min(track.s),max(track.s),N+1); 
